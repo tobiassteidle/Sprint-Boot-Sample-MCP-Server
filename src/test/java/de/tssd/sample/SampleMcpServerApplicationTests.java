@@ -7,6 +7,7 @@ import io.modelcontextprotocol.spec.McpSchema;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -22,12 +23,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "spring.main.banner-mode=log",
-                "spring.main.web-application-type=reactive",
-                "spring.ai.mcp.server.stdio=false"
+                "spring.main.banner-mode=log", // to enable logging
+                "spring.main.web-application-type=reactive",  // to use WebFluxSseClientTransport in McpClient
+                "spring.ai.mcp.server.stdio=false" // to disable stdio server
         })
 class SampleMcpServerApplicationTests {
 
+    @DisplayName("Test if the application context loads successfully, tools are registered, and the server is running.")
     @Test
     void selectToolList() {
         withClient(client -> {
@@ -37,6 +39,7 @@ class SampleMcpServerApplicationTests {
         });
     }
 
+    @DisplayName("Test if the tool 'sample_do_something' works correctly.")
     @Test
     void tool_doSomething() throws IOException {
         enqueueMockResponse(200, "{\"projects\": [{\"key\": \"projectKey\", \"name\": \"Project Name\"}]}");
@@ -48,7 +51,7 @@ class SampleMcpServerApplicationTests {
         });
     }
 
-
+    @DisplayName("Test if the tool 'sample_do_something_with_param' with an error.")
     @Test
     void tool_doSomethingWithParam() throws IOException {
         enqueueMockResponse(500, "{\"error\": \"Internal Server Error\"}");
@@ -61,9 +64,10 @@ class SampleMcpServerApplicationTests {
         });
     }
 
-    // MockWebServer configuration
+    // MockWebServer configuration to simulate the target service
     static final int TARGET_SERVICE_PORT = TestSocketUtils.findAvailableTcpPort();
 
+    // Provides a WebClient bean for the test
     @TestBean
     private WebClient webClient;
 
@@ -73,8 +77,10 @@ class SampleMcpServerApplicationTests {
                 .build();
     }
 
+    // MockWebServer instance to simulate the target service
     private static MockWebServer mockWebServer;
 
+    // Start the MockWebServer before each test
     @BeforeEach
     void setupMockWebServer() throws IOException {
         if (mockWebServer == null) {
@@ -83,15 +89,18 @@ class SampleMcpServerApplicationTests {
         }
     }
 
+    // Enqueue a mock response for the MockWebServer
     private void enqueueMockResponse(final int statusCode, final String responseBody) throws IOException {
         mockWebServer.enqueue(new MockResponse()
                 .setResponseCode(statusCode)
                 .setBody(responseBody));
     }
 
+    // Port for the MCP server
     @LocalServerPort
     private int port;
 
+    // Helper method to create a McpClient and execute a function with it
     private void withClient(Consumer<McpSyncClient> func) {
         final var webclient = WebClient.builder().baseUrl("http://localhost:" + port);
         final var transport = WebFluxSseClientTransport.builder(webclient).build();
