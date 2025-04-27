@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: sample-mcp-server
+
+  main:
+    banner-mode: off
+    web-application-type: none
+
+  ai:
+    mcp:
+      server:
+        name: sample-mcp-server
+        version: 1.0.0
+        type: SYNC
+        stdio: true
+
+logging:
+  pattern:
+    console: ""
+
